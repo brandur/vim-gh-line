@@ -20,6 +20,10 @@ if !exists('g:gh_line_blame_map_default')
     let g:gh_line_blame_map_default = 1
 endif
 
+if !exists('g:gh_line_canonical_map_default')
+    let g:gh_line_canonical_map_default = 1
+endif
+
 if !exists('g:gh_open_command')
     let g:gh_open_command = 'open '
 endif
@@ -32,11 +36,15 @@ if !exists('g:gh_line_blame_map') && g:gh_line_blame_map_default == 1
     let g:gh_line_blame_map = '<leader>gb'
 endif
 
+if !exists('g:gh_line_canonical_map') && g:gh_line_canonical_map_default == 1
+    let g:gh_line_canonical_map = '<leader>gc'
+endif
+
 if !exists('g:gh_use_canonical')
     let g:gh_use_canonical = 1
 endif
 
-func! s:gh_line(action) range
+func! s:gh_line(action, canonical) range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
@@ -48,7 +56,7 @@ func! s:gh_line(action) range
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
     " Git Commands
-    let commit = s:Commit(cdDir)
+    let commit = s:Commit(cdDir, a:canonical)
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
@@ -92,8 +100,8 @@ func! s:Action(origin, action)
   endif
 endfunc
 
-func! s:Commit(cdDir)
-  if exists('g:gh_use_canonical')
+func! s:Commit(cdDir, canonical)
+  if (a:canonical == 1) || (g:gh_use_canonical == 1)
     return system(a:cdDir . 'git rev-parse HEAD')
   else
     return system(a:cdDir . 'git rev-parse --abbrev-ref HEAD')
@@ -144,8 +152,9 @@ func! s:BitBucketUrl(origin)
   return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
 endfunc
 
-noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
-noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame')<CR>
+noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', 0)<CR>
+noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', 0)<CR>
+noremap <silent> <Plug>(gh-line-canonical) :call <SID>gh_line('blob', 1)<CR>
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
@@ -153,4 +162,8 @@ end
 
 if !hasmapto('<Plug>(gh-line-blame)') && exists('g:gh_line_blame_map')
     exe "map" g:gh_line_blame_map "<Plug>(gh-line-blame)"
+end
+
+if !hasmapto('<Plug>(gh-line-canonical)') && exists('g:gh_line_canonical_map')
+    exe "map" g:gh_line_canonical_map "<Plug>(gh-line-canonical)"
 end
